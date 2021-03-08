@@ -21,6 +21,7 @@ import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
+import com.squareup.picasso.Picasso;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -199,13 +200,13 @@ public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarke
     @Override
     public boolean onMarkerClick(Marker marker) {
         Ciudad ciudadclickada = (Ciudad) marker.getTag();
-        crearAlertDialog();
+        crearAlertDialog(ciudadclickada);
         return false;
     }
 
     private void crearAlertDialog(Ciudad ciudad) {
         ImageView image = new ImageView(this);
-        image.setImageResource(ciudad.getUrl());
+        Picasso.get().load(ciudad.getUrl()).into(image);
         AlertDialog.Builder builder =
                 new AlertDialog.Builder(this).
                         setMessage("").
