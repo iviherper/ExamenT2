@@ -12,8 +12,11 @@ import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -32,20 +35,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private Ciudad madrid=new Ciudad();
     private Ciudad barcelona=new Ciudad();
     private Ciudad sevilla=new Ciudad();
+    private FirebaseDatabase database = FirebaseDatabase.getInstance("https://exament2-e728f-default-rtdb.firebaseio.com/");
+    private DatabaseReference myRef = database.getReference("Ciudades");
     private ArrayList<Ciudad> ciudades = new ArrayList();
+    private ArrayList<Ciudad> ciudadesFirebase=new ArrayList();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);    inicializarCiudades();
+        setContentView(R.layout.activity_main);
+        inicializarCiudades();
         hiloWebScrapping.start();
         try {
             Thread.sleep(3500);
-            Log.d("Bien","Guardando");
             guardarCiudadesFirebase();
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
+        sacarCiudadesFirebase();
+
+
 
         // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         SupportMapFragment mapFragment = (SupportMapFragment) getSupportFragmentManager()
@@ -53,9 +62,43 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mapFragment.getMapAsync(this);
     }
 
+    private void mostrarMarcadores() {
+        for (Ciudad ciu:ciudadesFirebase
+             ) {
+            LatLng ciudadAct = new LatLng(Double.parseDouble(ciu.getLat()), Double.parseDouble(ciu.getLng()));
+            Log.d("bien", ciu.getNombre());
+            mMap.addMarker(new MarkerOptions().position(ciudadAct).title(ciu.getNombre()));
+            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(ciudadAct, 5));
+        }
+
+    }
+
+    private void sacarCiudadesFirebase() {
+        myRef.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(DataSnapshot dataSnapshot) {
+                // This method is called once with the initial value and again
+                // whenever data at this location is updated.
+                Iterable<DataSnapshot> datos = dataSnapshot.getChildren();
+                while (datos.iterator().hasNext()) {
+                    DataSnapshot d = datos.iterator().next();
+                    Ciudad cActual = d.getValue(Ciudad.class);
+                    ciudadesFirebase.add(cActual);
+                }
+                //Debug Log.d("bien", ciudadesFirebase.size() + " ciudades sacadas");
+                mostrarMarcadores();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError error) {
+                // Failed to read value
+                Log.w("Error", "Failed to read value.", error.toException());
+            }
+        });
+
+    }
+
     private void guardarCiudadesFirebase() {
-        FirebaseDatabase database = FirebaseDatabase.getInstance("https://exament2-e728f-default-rtdb.firebaseio.com/");
-        DatabaseReference myRef = database.getReference("Ciudades");
         for (Ciudad ciu:ciudades
              ) {
             myRef.push().setValue(ciu);
@@ -136,8 +179,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mMap = googleMap;
 
         // Add a marker in Sydney and move the camera
-        LatLng sydney = new LatLng(-34, 151);
-        mMap.addMarker(new MarkerOptions().position(sydney).title("Marker in Sydney"));
-        mMap.moveCamera(CameraUpdateFactory.newLatLng(sydney));
+
     }
 }

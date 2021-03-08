@@ -16,6 +16,13 @@ public class Ciudad {
                 '}';
     }
 
+    public Ciudad(String nombre, String lat, String lng, String url) {
+        this.nombre = nombre;
+        this.lat = lat;
+        this.lng = lng;
+        this.url = url;
+    }
+
     public String getNombre() {
         return nombre;
     }
