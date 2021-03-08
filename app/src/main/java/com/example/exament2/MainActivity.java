@@ -1,16 +1,20 @@
 package com.example.exament2;
 
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.util.Log;
+import android.widget.ImageView;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -29,7 +33,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MainActivity extends AppCompatActivity implements GoogleMap.OnMarkerClickListener, OnMapReadyCallback {
 
     private GoogleMap mMap;
     private Ciudad madrid=new Ciudad();
@@ -39,6 +43,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private DatabaseReference myRef = database.getReference("Ciudades");
     private ArrayList<Ciudad> ciudades = new ArrayList();
     private ArrayList<Ciudad> ciudadesFirebase=new ArrayList();
+    Marker marcador;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,8 +72,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
              ) {
             LatLng ciudadAct = new LatLng(Double.parseDouble(ciu.getLat()), Double.parseDouble(ciu.getLng()));
             Log.d("bien", ciu.getNombre());
-            mMap.addMarker(new MarkerOptions().position(ciudadAct).title(ciu.getNombre()));
-            mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(ciudadAct, 5));
+            marcador = mMap.addMarker(new MarkerOptions().position(ciudadAct).title(ciu.getNombre()));
+            marcador.setTag(ciu);
+
+            if(ciu.getNombre().equals("Madrid")) {
+                mMap.moveCamera(CameraUpdateFactory.newLatLngZoom(ciudadAct, 5));
+            }
+            mMap.setOnMarkerClickListener(this);
         }
 
     }
@@ -138,6 +148,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         String coordenada="";
         ArrayList<String> coord = new ArrayList();
         String n="";
+
         for (int i=0;text.length()>i;i++) {
             try {
                 int ncoord = Integer.parseInt(String.valueOf(text.charAt(i)));
@@ -151,6 +162,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         double coordfinal = Integer.parseInt(coord.get(0));
         coordfinal+=(Double.parseDouble(coord.get(1))/60);
         coordfinal+=(Double.parseDouble(coord.get(2))/3600);
+        if (text.charAt(text.length()-1) == 'O') {
+            coordfinal=coordfinal*-1;
+        }
         Log.d("cord",coordfinal+"");
         coordenada+=coordfinal;
         return coordenada;
@@ -180,5 +194,42 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         // Add a marker in Sydney and move the camera
 
+    }
+
+    @Override
+    public boolean onMarkerClick(Marker marker) {
+        Ciudad ciudadclickada = (Ciudad) marker.getTag();
+        crearAlertDialog();
+        return false;
+    }
+
+    private void crearAlertDialog(Ciudad ciudad) {
+        ImageView image = new ImageView(this);
+        image.setImageResource(ciudad.getUrl());
+        AlertDialog.Builder builder =
+                new AlertDialog.Builder(this).
+                        setMessage("").
+                        setCancelable(true).
+                        setPositiveButton("enviar", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        }).
+                        setCancelable(true).
+                        setPositiveButton("enviar", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        }).
+                        setPositiveButton("Cerrar", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        }).
+                        setView(image);
+        builder.create().show();
     }
 }
